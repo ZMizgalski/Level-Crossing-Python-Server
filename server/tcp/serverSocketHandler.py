@@ -4,11 +4,12 @@ import pickle
 import struct
 import threading
 from server.tcp.serverDataService import *
-from server.detector.videoDetector import VideoDetector
+# from server.detector.videoDetector import VideoDetector
 
 
-class SocketHandler(object):
+class SocketHandler(threading.Thread):
     def __init__(self, host_ip="localhost", host_port=00000):
+        threading.Thread.__init__(self)
         self.host_ip = host_ip
         self.host_port = host_port
         self.connections = []
