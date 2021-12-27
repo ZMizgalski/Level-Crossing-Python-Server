@@ -1,0 +1,3 @@
+camerasAddressees = []
+crossingsToOpen = []
+camerasLiveImages = []
