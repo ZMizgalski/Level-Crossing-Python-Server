@@ -4,13 +4,18 @@ import pickle
 import struct
 import threading
 from server.tcp.serverDataService import *
-# from server.detector.videoDetector import VideoDetector
+from server.app.appInit import appInit
+from server.detector.videoDetector import VideoDetector
 
 
-class SocketHandler(threading.Thread):
-    def __init__(self, host_ip="localhost", host_port=00000):
-        threading.Thread.__init__(self)
+def initApp(HOST, APP_PORT):
+    appInit(host_ip=HOST, host_port=APP_PORT)
+
+
+class SocketHandler(object):
+    def __init__(self, host_ip="localhost", host_port=00000, app_port=0000):
         self.host_ip = host_ip
+        self.app_port = app_port
         self.host_port = host_port
         self.connections = []
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -21,6 +26,7 @@ class SocketHandler(threading.Thread):
 
     def create_connection(self):
         print("Server is listening on -> " + self.host_ip + ":" + str(self.host_port))
+        threading.Thread(target=initApp, args=[self.host_ip, self.app_port]).start()
         while True:
             sock, address = self.socket.accept()
             self.connections.append(ConnectedClient(sock, address, True, self.connections))
@@ -105,14 +111,15 @@ class ConnectedClient(threading.Thread):
                     self.connections.remove(self)
                     break
                 frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
-                try:
-                    camerasLiveImages.remove(frame)
-                except ValueError:
-                    camerasLiveImages.append(frame)
                 # TODO When you done enable detection
-                # frame2 = VideoDetector(frame).getFrame()
-                # cv2.imshow(str(self.address), frame2)
-                cv2.imshow(str(self.address), frame)
+                frame2 = VideoDetector(frame).getFrame()
+
+                try:
+                    camerasLiveImages.remove(frame2)
+                    camerasLiveImages.append(frame2)
+                except ValueError:
+                    camerasLiveImages.append(frame2)
+                cv2.imshow(str(self.address), frame2)
                 cv2.waitKey(1)
             except socket.error:
                 self.disconnect()

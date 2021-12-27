@@ -1,19 +1,27 @@
-import threading
-from server.app.app import App
 from server.tcp.serverDataService import *
+from flask import Flask, render_template, Response
+app = Flask(__name__)
 
 
-class appInit(threading.Thread):
-    def __init__(self, host_ip="0.0.0.0", host_port=0000, app_name="DefaultName"):
-        threading.Thread.__init__(self)
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+
+@app.route('/video_feed')
+def video_feed():
+    return Response(generate_img(),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+def generate_img():
+    while True:
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + camerasLiveImages[0] + b'\r\n\r\n')
+
+
+class appInit(object):
+    def __init__(self, host_ip="0.0.0.0", host_port=0000):
         self.host_ip = host_ip
-        self.name = app_name
         self.host_port = host_port
-        threading.Thread.__init__(self)
-        flaskApp = App(host_ip=self.host_ip, host_port=self.host_port)
-        flaskApp.add_endpoint(endpoint="/elo", endpoint_name="elo", handler=self.get_elo)
-        flaskApp.run()
-
-    @staticmethod
-    def get_elo():
-        return "sasasasas"
+        app.run(host=self.host_ip, port=self.host_port, debug=False)
