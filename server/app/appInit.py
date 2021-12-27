@@ -1,5 +1,8 @@
 from server.tcp.serverDataService import *
-from flask import Flask, render_template, Response
+from flask import Flask, render_template, Response, make_response
+import cv2
+import base64
+
 app = Flask(__name__)
 
 
@@ -10,14 +13,19 @@ def index():
 
 @app.route('/video_feed')
 def video_feed():
-    return Response(generate_img(),
-                    mimetype='multipart/x-mixed-replace; boundary=frame')
+    return Response(gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+def gen():
+    while True:
+        frame = generate_img()
+        yield (b'--frame\r\n'
+               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
 
 
 def generate_img():
-    while True:
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + camerasLiveImages[0] + b'\r\n\r\n')
+    ret, buffer = cv2.imencode('.jpg', camerasLiveImages[0])
+    return buffer.tobytes()
 
 
 class appInit(object):

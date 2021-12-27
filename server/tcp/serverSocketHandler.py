@@ -111,10 +111,9 @@ class ConnectedClient(threading.Thread):
                     self.connections.remove(self)
                     break
                 frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
-                # TODO When you done enable detection
                 frame2 = VideoDetector(frame).getFrame()
                 try:
-                    camerasLiveImages.remove(frame2)
+                    camerasLiveImages.clear()
                     camerasLiveImages.append(frame2)
                 except ValueError:
                     camerasLiveImages.append(frame2)
