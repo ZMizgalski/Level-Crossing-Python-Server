@@ -1,13 +1,13 @@
 import cv2 as cv
 import numpy as np
+import os
 
 
-class VideoCapture:
-    def __init__(self, video_source=0):
-        self.vid = cv.VideoCapture(video_source)
-        if not self.vid.isOpened():
-            raise ValueError("Unable to open camera", video_source)
+class VideoDetector:
+    def __init__(self, frame):
+        self.frame = frame
 
+        self.root_dir = os.path.dirname(os.path.abspath(__file__))
         # Tablice z punkatmi do zaznaczanai obszaru
         self.contours_list = []
         self.contours = []
@@ -25,7 +25,7 @@ class VideoCapture:
         self.maxThresh = 0.2  # Granica wykrywalności zalecane: (0.20)
 
         # Dane dla nazw przy dekekcji obiektów
-        self.fileWithClassesNames = "detector/coco.names"  # Plik z nazwami dla obiektów
+        self.fileWithClassesNames = os.path.join(self.root_dir, "coco.names")  # Plik z nazwami dla obiektów
         self.names = None  # Na początku jest None bo jeszczew nic nie wykryło
 
         # Otwiera plik "coco.names" i ładuje clasy
@@ -33,8 +33,8 @@ class VideoCapture:
             self.names = file.read().rstrip('\n').split('\n')  # z lisy
 
         # Dane dla Modelu AI do wykrywania obiektów
-        self.modelIAConfigFile = 'detector/yolov3-tiny.cfg'  # Plik configuracyjny AI
-        self.modelAIWeighs = 'detector/yolov3-tiny.weights'  # Plik wag AI taki brain
+        self.modelIAConfigFile = os.path.join(self.root_dir, 'yolov3-tiny.cfg')  # Plik configuracyjny AI
+        self.modelAIWeighs = os.path.join(self.root_dir, 'yolov3-tiny.weights')  # Plik wag AI taki brain
 
         # Siatka modelu z plików AI
         self.net = cv.dnn.readNetFromDarknet(self.modelIAConfigFile,
@@ -82,13 +82,13 @@ class VideoCapture:
     @staticmethod
     def getNamesFromNet(net):
         namesFormLayers = net.getLayerNames()
-        return [namesFormLayers[layer[0] - 1] for layer in net.getUnconnectedOutLayers()]
+        return [namesFormLayers[layer - 1] for layer in net.getUnconnectedOutLayers()]
 
     # Przewiduje prostokaty do rysowania na podstawie net i pewności kalkulacji
-    def predictRects(self, frame, edges):
+    def predictRectangles(self, frame, edges):
         frameH = frame.shape[0]
         frameW = frame.shape[1]
-        rects = []
+        rectangles = []
         confidences = []
         nameIDs = []
 
@@ -110,14 +110,13 @@ class VideoCapture:
                     l = int(x - w / 2)
                     t = int(y - h / 2)
 
-                    rects.append([l, t, w, h])
+                    rectangles.append([l, t, w, h])
                     confidences.append(float(confidence))
                     nameIDs.append(classID)
 
-                    detectedRects = cv.dnn.NMSBoxes(rects, confidences, self.confidenceThresh, self.maxThresh)
-                    for detect in detectedRects:
-                        detect = detect[0]
-                        rect = rects[detect]
+                    detectedRectangles = cv.dnn.NMSBoxes(rectangles, confidences, self.confidenceThresh, self.maxThresh)
+                    for detect in detectedRectangles:
+                        rect = rectangles[detect]
                         l = rect[0]
                         t = rect[1]
                         w = rect[2]
@@ -126,21 +125,15 @@ class VideoCapture:
 
     # PObiera i modyfikuje klatkę za klatką
     def getFrame(self):
-        if self.vid.isOpened():
-            isTrue, frame = self.vid.read()
-            if isTrue:
-                blob = cv.dnn.blobFromImage(frame, 1 / 255, (self.windowWidth, self.windowHeight), [0, 0, 0], 1,
-                                            crop=False)
+        # if self.frame.isOpened():
+        #     isTrue, frame = self.frame.read()
+        #     if isTrue:
+        blob = cv.dnn.blobFromImage(self.frame, 1 / 255, (self.windowWidth, self.windowHeight), [0, 0, 0], 1,
+                                    crop=False)
+        self.net.setInput(blob)
+        outs = self.net.forward(self.getNamesFromNet(self.net))
 
-                self.net.setInput(blob)
-                outs = self.net.forward(self.getNamesFromNet(self.net))
-
-                self.predictRects(frame, outs)
-                return isTrue, cv.cvtColor(frame, cv.COLOR_BGR2RGB)
-            else:
-                return isTrue, None
-
-    # Niszczy okno po zamknięciu
-    def __del__(self):
-        if self.vid.isOpened():
-            self.vid.release()
+        self.predictRectangles(self.frame, outs)
+        return cv.cvtColor(self.frame, cv.COLOR_BGR2RGB)
+    # else:
+    #     return isTrue, None

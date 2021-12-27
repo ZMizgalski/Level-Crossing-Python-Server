@@ -4,6 +4,7 @@ import pickle
 import struct
 import threading
 from server.tcp.serverDataService import *
+from server.detector.videoDetector import VideoDetector
 
 
 class SocketHandler(object):
@@ -104,7 +105,8 @@ class ConnectedClient(threading.Thread):
                     camerasLiveImages.remove(frame)
                 except ValueError:
                     camerasLiveImages.append(frame)
-                cv2.imshow(str(self.address), frame)
+                frame2 = VideoDetector(frame).getFrame()
+                cv2.imshow(str(self.address), frame2)
                 cv2.waitKey(1)
             except socket.error:
                 self.disconnect()
