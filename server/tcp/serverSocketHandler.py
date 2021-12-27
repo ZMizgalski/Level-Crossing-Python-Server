@@ -64,7 +64,6 @@ class ConnectedClient(threading.Thread):
     def run(self):
         while self.connection_established:
             try:
-                self.socket.send('elo'.encode("UTF-8"))
                 if not self.data_received:
                     data = self.socket.recv(4096)
                     self.client_address = str(data).replace("b", "").replace("'", "")
@@ -74,6 +73,10 @@ class ConnectedClient(threading.Thread):
                 while len(self.data) < self.payload_size:
                     try:
                         self.data += self.socket.recv(4096)
+                        if str(self.data) == "b''":
+                            self.disconnect()
+                            self.connections.remove(self)
+                            break
                         self.checkIfOpenCrossing(self.data)
                     except socket.error:
                         self.disconnect()
@@ -105,8 +108,10 @@ class ConnectedClient(threading.Thread):
                     camerasLiveImages.remove(frame)
                 except ValueError:
                     camerasLiveImages.append(frame)
-                frame2 = VideoDetector(frame).getFrame()
-                cv2.imshow(str(self.address), frame2)
+                # TODO When you done enable detection
+                # frame2 = VideoDetector(frame).getFrame()
+                # cv2.imshow(str(self.address), frame2)
+                cv2.imshow(str(self.address), frame)
                 cv2.waitKey(1)
             except socket.error:
                 self.disconnect()
