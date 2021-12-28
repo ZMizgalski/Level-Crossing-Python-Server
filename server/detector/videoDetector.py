@@ -6,36 +6,28 @@ import os
 class VideoDetector:
     def __init__(self, frame):
         self.frame = frame
-
         self.root_dir = os.path.dirname(os.path.abspath(__file__))
         # Tablice z punkatmi do zaznaczanai obszaru
         self.contours_list = []
         self.contours = []
-
         # Zmienne do rectContains(rec1, rect2)
         self.puzzle_rect = None
         self.puzzle_rect_name = None
-
         # Wielkość okna
         self.windowWidth = 416  # Szerokośc otwieranego detectora
         self.windowHeight = 416  # Szerokośc otwieranego detectora
-
         # Zmienne do dokładności wykrywacza
         self.confidenceThresh = 0.15  # Pewnośc wykrywania zalecane: (0.15)
         self.maxThresh = 0.2  # Granica wykrywalności zalecane: (0.20)
-
         # Dane dla nazw przy dekekcji obiektów
         self.fileWithClassesNames = os.path.join(self.root_dir, "coco.names")  # Plik z nazwami dla obiektów
         self.names = None  # Na początku jest None bo jeszczew nic nie wykryło
-
         # Otwiera plik "coco.names" i ładuje clasy
         with open(self.fileWithClassesNames, 'rt') as file:  # Otwiera plik i pobiera nazwy class
             self.names = file.read().rstrip('\n').split('\n')  # z lisy
-
         # Dane dla Modelu AI do wykrywania obiektów
         self.modelIAConfigFile = os.path.join(self.root_dir, 'yolov3-tiny.cfg')  # Plik configuracyjny AI
         self.modelAIWeighs = os.path.join(self.root_dir, 'yolov3-tiny.weights')  # Plik wag AI taki brain
-
         # Siatka modelu z plików AI
         self.net = cv.dnn.readNetFromDarknet(self.modelIAConfigFile,
                                              self.modelAIWeighs)  # ładuje mi siatke z modelu i AI
@@ -91,29 +83,21 @@ class VideoDetector:
         rectangles = []
         confidences = []
         nameIDs = []
-
         for edge in edges:
             for det in edge:
-
                 scores = det[5:]
-
                 classID = np.argmax(scores)
                 confidence = scores[classID]
-
                 if confidence > self.confidenceThresh:
                     w = int(det[2] * frameW)
                     h = int(det[3] * frameH)
-
                     x = int(det[0] * frameW)
                     y = int(det[1] * frameH)
-
                     l = int(x - w / 2)
                     t = int(y - h / 2)
-
                     rectangles.append([l, t, w, h])
                     confidences.append(float(confidence))
                     nameIDs.append(classID)
-
                     detectedRectangles = cv.dnn.NMSBoxes(rectangles, confidences, self.confidenceThresh, self.maxThresh)
                     for detect in detectedRectangles:
                         rect = rectangles[detect]

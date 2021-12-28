@@ -7,10 +7,30 @@ from server.tcp.serverDataService import *
 from server.app.appInit import appInit
 from server.detector.videoDetector import VideoDetector
 import uuid
+import numpy as np
 
 
 def initApp(HOST, APP_PORT):
     appInit(host_ip=HOST, host_port=APP_PORT)
+
+
+# github method
+def simplest_cb2(img, percent=1):
+    out_channels = []
+    cumstops = (
+        img.shape[0] * img.shape[1] * percent / 200.0,
+        img.shape[0] * img.shape[1] * (1 - percent / 200.0)
+    )
+    for channel in cv2.split(img):
+        cumhist = np.cumsum(cv2.calcHist([channel], [0], None, [256], (0, 256)))
+        low_cut, high_cut = np.searchsorted(cumhist, cumstops)
+        lut = np.concatenate((
+            np.zeros(low_cut),
+            np.around(np.linspace(0, 255, high_cut - low_cut + 1)),
+            255 * np.ones(255 - high_cut)
+        ))
+        out_channels.append(cv2.LUT(channel, lut.astype('uint8')))
+    return cv2.merge(out_channels)
 
 
 class SocketHandler(object):
@@ -113,13 +133,18 @@ class ConnectedClient(threading.Thread):
                     self.connections.remove(self)
                     break
                 frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
-                frame2 = VideoDetector(frame).getFrame()
+                colored_frame2 = simplest_cb2(frame, 1)
+                frame2 = VideoDetector(colored_frame2).getFrame()
+                w, h = 240 + 500, 320 + 400
+                x, y = 10, 0
+                crop_img = frame2[y:y+h, x:x+w]
+                resized_frame = cv2.resize(crop_img, (240 + 550, 320 + 450), interpolation=cv2.INTER_AREA)
                 try:
                     camerasLiveImages.pop(self.uuid)
-                    camerasLiveImages[self.uuid] = frame2
+                    camerasLiveImages[self.uuid] = resized_frame
                 except KeyError:
-                    camerasLiveImages[self.uuid] = frame2
-                cv2.imshow(str(self.address), frame2)
+                    camerasLiveImages[self.uuid] = resized_frame
+                cv2.imshow(str(self.address), resized_frame)
                 cv2.waitKey(1)
             except socket.error:
                 self.disconnect()

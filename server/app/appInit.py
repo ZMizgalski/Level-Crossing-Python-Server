@@ -1,5 +1,5 @@
 from server.tcp.serverDataService import *
-from flask import Flask, render_template, Response, request
+from flask import Flask, render_template, Response, request, make_response
 import cv2
 
 app = Flask(__name__)
@@ -13,6 +13,10 @@ def index():
 @app.route('/video_feed/<id>')
 def video_feed(id):
     uuid = request.view_args['id']
+    try:
+        data = camerasLiveImages[uuid]
+    except KeyError:
+        return Response("UUID not found", status=400)
     return Response(gen(uuid), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
