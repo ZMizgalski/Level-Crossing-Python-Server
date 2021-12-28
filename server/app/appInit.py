@@ -1,7 +1,7 @@
 from server.tcp.serverDataService import *
-from flask import Flask, render_template, Response, make_response
+from flask import Flask, render_template, Response, request
 import cv2
-import base64
+import dict
 
 app = Flask(__name__)
 
@@ -11,20 +11,27 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/video_feed')
-def video_feed():
-    return Response(gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
+@app.route('/video_feed/<id>')
+def video_feed(id):
+    uuid = request.view_args['id']
+    return Response(gen(uuid), mimetype='multipart/x-mixed-replace; boundary=frame')
 
 
-def gen():
+def gen(uuid):
     while True:
-        frame = generate_img()
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+        try:
+            frame = generate_img(uuid)
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+        except TypeError:
+            pass
 
 
-def generate_img():
-    ret, buffer = cv2.imencode('.jpg', camerasLiveImages[0])
+def generate_img(uuid):
+    try:
+        ret, buffer = cv2.imencode('.jpg', camerasLiveImages[uuid])
+    except IndexError:
+        return
     return buffer.tobytes()
 
 

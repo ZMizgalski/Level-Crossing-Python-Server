@@ -6,6 +6,7 @@ import threading
 from server.tcp.serverDataService import *
 from server.app.appInit import appInit
 from server.detector.videoDetector import VideoDetector
+import uuid
 
 
 def initApp(HOST, APP_PORT):
@@ -40,6 +41,7 @@ class ConnectedClient(threading.Thread):
         if connections is None:
             connections = []
         self.data = b""
+        self.uuid = str(uuid.uuid4())
         self.connections = connections
         self.payload_size = struct.calcsize(">L")
         self.socket = sock
@@ -53,7 +55,7 @@ class ConnectedClient(threading.Thread):
         self.data_received = False
         if str(self.address) is not None:
             cv2.destroyWindow(str(self.address))
-        camerasAddressees.remove(self.client_address)
+        camerasAddressees.pop(self.client_address)
         self.connection_established = False
         self.socket.close()
         print(camerasAddressees)
@@ -74,7 +76,7 @@ class ConnectedClient(threading.Thread):
                 if not self.data_received:
                     data = self.socket.recv(4096)
                     self.client_address = str(data).replace("b", "").replace("'", "")
-                    camerasAddressees.append(self.client_address)
+                    camerasAddressees[self.client_address] = self.uuid
                     print(camerasAddressees)
                     self.data_received = True
                 while len(self.data) < self.payload_size:
@@ -113,10 +115,10 @@ class ConnectedClient(threading.Thread):
                 frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
                 frame2 = VideoDetector(frame).getFrame()
                 try:
-                    camerasLiveImages.clear()
-                    camerasLiveImages.append(frame2)
-                except ValueError:
-                    camerasLiveImages.append(frame2)
+                    camerasLiveImages.pop(self.uuid)
+                    camerasLiveImages[self.uuid] = frame2
+                except KeyError:
+                    camerasLiveImages[self.uuid] = frame2
                 cv2.imshow(str(self.address), frame2)
                 cv2.waitKey(1)
             except socket.error:

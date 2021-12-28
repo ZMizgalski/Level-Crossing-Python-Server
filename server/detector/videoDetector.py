@@ -123,17 +123,10 @@ class VideoDetector:
                         h = rect[3]
                         self.drawRect(frame, nameIDs[detect], l, t, l + w, t + h)
 
-    # PObiera i modyfikuje klatkę za klatką
+    # Pobiera i modyfikuje klatkę za klatką
     def getFrame(self):
-        # if self.frame.isOpened():
-        #     isTrue, frame = self.frame.read()
-        #     if isTrue:
-        blob = cv.dnn.blobFromImage(self.frame, 1 / 255, (self.windowWidth, self.windowHeight), [0, 0, 0], 1,
-                                    crop=False)
+        blob = cv.dnn.blobFromImage(self.frame, 1 / 255, (self.windowWidth, self.windowHeight), [0, 0, 0], 1, crop=False)
         self.net.setInput(blob)
         outs = self.net.forward(self.getNamesFromNet(self.net))
-
         self.predictRectangles(self.frame, outs)
         return cv.cvtColor(self.frame, cv.COLOR_BGR2RGB)
-    # else:
-    #     return isTrue, None
