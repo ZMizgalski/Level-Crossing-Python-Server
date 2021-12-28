@@ -1,7 +1,6 @@
 from server.tcp.serverDataService import *
 from flask import Flask, render_template, Response, request
 import cv2
-import dict
 
 app = Flask(__name__)
 
