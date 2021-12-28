@@ -29,7 +29,7 @@ def gen(uuid):
 def generate_img(uuid):
     try:
         ret, buffer = cv2.imencode('.jpg', camerasLiveImages[uuid])
-    except IndexError:
+    except KeyError:
         return
     return buffer.tobytes()
 
