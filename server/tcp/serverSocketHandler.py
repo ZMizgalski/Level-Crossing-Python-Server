@@ -1,4 +1,6 @@
 import socket
+import time
+
 import cv2
 import pickle
 import struct
@@ -69,6 +71,7 @@ class ConnectedClient(threading.Thread):
         self.connection_established = connection_established
         self.data_received = False
         self.client_address = ""
+        self.crossing_action = False
 
     def disconnect(self):
         print("Client with address: " + str(self.address) + " has disconnected")
@@ -80,19 +83,37 @@ class ConnectedClient(threading.Thread):
         self.socket.close()
         print(camerasAddressees)
 
-    @staticmethod
-    def checkIfOpenCrossing(data):
-        try:
-            if data == "open":
-                print("open")
-            elif data == "close":
-                print("close")
-        except socket.error:
-            print("cannot make action")
+    def open(self, sock, uuid):
+        sock.send('open'.encode("UTF-8"))
+        crossingsToOpen.pop(uuid)
+
+    def close(self, sock, uuid):
+        sock.send('close'.encode("UTF-8"))
+        crossingsToOpen.pop(uuid)
+
+    def checkIfOpenCrossing(self, socket, data, uuid):
+        print(data)
+        if data == "open":
+            self.open(socket, uuid)
+        elif data == "close":
+            self.close(socket, uuid)
+        else:
+            try:
+                crossingsToOpen.pop(uuid)
+            except KeyError:
+                pass
 
     def run(self):
         while self.connection_established:
             try:
+                try:
+                    if not self.crossing_action:
+                        crossingStatus = crossingsToOpen[self.uuid]
+                        self.checkIfOpenCrossing(self.socket, crossingStatus, self.uuid)
+                        self.crossing_action = True
+                except KeyError:
+                    pass
+
                 if not self.data_received:
                     data = self.socket.recv(4096)
                     self.client_address = str(data).replace("b", "").replace("'", "")
@@ -106,7 +127,6 @@ class ConnectedClient(threading.Thread):
                             self.disconnect()
                             self.connections.remove(self)
                             break
-                        self.checkIfOpenCrossing(self.data)
                     except socket.error:
                         self.disconnect()
                         self.connections.remove(self)
@@ -132,12 +152,13 @@ class ConnectedClient(threading.Thread):
                     self.disconnect()
                     self.connections.remove(self)
                     break
+                self.crossing_action = False
                 frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
                 colored_frame2 = simplest_cb2(frame, 1)
                 frame2 = VideoDetector(colored_frame2).getFrame()
                 w, h = 240 + 500, 320 + 400
                 x, y = 10, 0
-                crop_img = frame2[y:y+h, x:x+w]
+                crop_img = frame2[y:y + h, x:x + w]
                 resized_frame = cv2.resize(crop_img, (240 + 550, 320 + 450), interpolation=cv2.INTER_AREA)
                 try:
                     camerasLiveImages.pop(self.uuid)

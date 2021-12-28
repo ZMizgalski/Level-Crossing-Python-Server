@@ -1,6 +1,7 @@
 from server.tcp.serverDataService import *
 from flask import Flask, render_template, Response, request, make_response
 import cv2
+from uuid import UUID
 
 app = Flask(__name__)
 
@@ -18,6 +19,26 @@ def video_feed(id):
     except KeyError:
         return Response("UUID not found", status=400)
     return Response(gen(uuid), mimetype='multipart/x-mixed-replace; boundary=frame')
+
+
+@app.route('/crossingAction', methods=['POST'])
+def crossing_action():
+    content_type = request.headers.get('Content-Type')
+    if content_type == 'application/json':
+        json = request.json
+        try:
+            id = json["id"]
+            try:
+                valid_uuid = UUID(id)
+            except ValueError:
+                return Response("Not valid uuid", status=400)
+            action = json["action"]
+            crossingsToOpen[str(valid_uuid)] = action
+            return Response(id + " -> " + action, status=200)
+        except KeyError:
+            return Response("Content-Type not supported!", status=400)
+    else:
+        return Response("Content-Type not supported!", status=400)
 
 
 def gen(uuid):
