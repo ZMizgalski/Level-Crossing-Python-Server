@@ -1,4 +1,4 @@
 camerasAddressees = {}
-crossingsToOpen = []
+crossingsToOpen = {}
 camerasLiveImages = {}
 
