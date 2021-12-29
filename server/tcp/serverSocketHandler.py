@@ -1,5 +1,4 @@
 import socket
-import time
 
 import cv2
 import pickle
