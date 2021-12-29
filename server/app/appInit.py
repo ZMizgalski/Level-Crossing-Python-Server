@@ -11,7 +11,12 @@ def index():
     return render_template('index.html')
 
 
-@app.route('/video_feed/<id>')
+@app.route('/getAllCameras', methods=['GET'])
+def get_all_cameras():
+    return Response(camerasAddressees.values(), status=200)
+
+
+@app.route('/video_feed/<id>', methods=['GET'])
 def video_feed(id):
     uuid = request.view_args['id']
     try:

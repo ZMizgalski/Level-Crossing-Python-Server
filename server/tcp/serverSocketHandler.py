@@ -10,6 +10,9 @@ from server.app.appInit import appInit
 from server.detector.videoDetector import VideoDetector
 import uuid
 import numpy as np
+import os
+from datetime import datetime
+import pathlib
 
 
 def initApp(HOST, APP_PORT):
@@ -72,6 +75,8 @@ class ConnectedClient(threading.Thread):
         self.data_received = False
         self.client_address = ""
         self.crossing_action = False
+        self.img_array = []
+        self.root_dir = os.path.dirname(os.path.abspath('logs')) + '\\logs\\'
         self.img_frame_counter = 0
 
     def disconnect(self):
@@ -156,24 +161,40 @@ class ConnectedClient(threading.Thread):
                     self.connections.remove(self)
                     break
                 self.crossing_action = False
-
-                if self.img_frame_counter % 5 == 0:
-                    frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
-                    colored_frame2 = simplest_cb2(frame, 1)
-                    frame2 = VideoDetector(colored_frame2).getFrame()
-                    w, h = 240 + 500, 320 + 400
-                    x, y = 10, 0
-                    crop_img = frame2[y:y + h, x:x + w]
-                    resized_frame = cv2.resize(crop_img, (240 + 550, 320 + 450), interpolation=cv2.INTER_AREA)
-                    try:
-                        camerasLiveImages.pop(self.uuid)
-                        camerasLiveImages[self.uuid] = resized_frame
-                    except KeyError:
-                        camerasLiveImages[self.uuid] = resized_frame
-                    cv2.imshow(str(self.address), resized_frame)
-                    cv2.waitKey(1)
+                frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
+                colored_frame2 = simplest_cb2(frame, 1)
+                frame2 = VideoDetector(colored_frame2).getFrame()
+                w, h = 240 + 500, 320 + 400
+                x, y = 10, 0
+                crop_img = frame2[y:y + h, x:x + w]
+                resized_frame = cv2.resize(crop_img, (240 + 550, 320 + 450), interpolation=cv2.INTER_AREA)
+                try:
+                    camerasLiveImages.pop(self.uuid)
+                    camerasLiveImages[self.uuid] = resized_frame
+                except KeyError:
+                    camerasLiveImages[self.uuid] = resized_frame
+                self.createVideo(resized_frame)
+                cv2.imshow(str(self.address), resized_frame)
+                cv2.waitKey(1)
 
             except socket.error:
                 self.disconnect()
                 self.connections.remove(self)
                 break
+
+    def createVideo(self, frame):
+        self.img_array.append(frame)
+        self.img_frame_counter += 1
+        if self.img_frame_counter % 700 == 0:
+            now = datetime.now()
+            date_dir = now.strftime("%Y\\%m\\%d")
+            filename = now.strftime("%H_%M_%S")
+            file = self.root_dir + date_dir + "\\" + filename + ".avi"
+            path = self.root_dir + date_dir
+            pathlib.Path(path).mkdir(parents=True, exist_ok=True)
+            height, width, layers = frame.shape
+            out = cv2.VideoWriter(file, cv2.VideoWriter_fourcc(*'DIVX'), 15, (width, height))
+            for i in range(len(self.img_array)):
+                out.write(self.img_array[i])
+            out.release()
+            self.img_array.clear()
