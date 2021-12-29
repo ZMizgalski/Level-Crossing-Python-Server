@@ -1,4 +1,5 @@
 camerasAddressees = {}
 crossingsToOpen = {}
 camerasLiveImages = {}
+areas = {}
 

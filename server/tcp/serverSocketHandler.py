@@ -185,7 +185,7 @@ class ConnectedClient(threading.Thread):
     def createVideo(self, frame):
         self.img_array.append(frame)
         self.img_frame_counter += 1
-        if self.img_frame_counter % 700 == 0:
+        if self.img_frame_counter % 4000 == 0:
             now = datetime.now()
             date_dir = now.strftime("%Y\\%m\\%d")
             filename = now.strftime("%H_%M_%S")
