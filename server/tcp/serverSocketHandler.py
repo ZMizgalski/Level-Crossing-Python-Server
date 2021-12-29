@@ -4,6 +4,7 @@ import cv2
 import pickle
 import struct
 import threading
+from time import sleep
 from server.tcp.serverDataService import *
 from server.app.appInit import appInit
 from server.detector.videoDetector import VideoDetector
@@ -71,6 +72,7 @@ class ConnectedClient(threading.Thread):
         self.data_received = False
         self.client_address = ""
         self.crossing_action = False
+        self.img_frame_counter = 0
 
     def disconnect(self):
         print("Client with address: " + str(self.address) + " has disconnected")
@@ -104,6 +106,8 @@ class ConnectedClient(threading.Thread):
 
     def run(self):
         while self.connection_established:
+            # reducing fps but increasing performance
+            sleep(0.02)
             try:
                 try:
                     if not self.crossing_action:
@@ -152,20 +156,23 @@ class ConnectedClient(threading.Thread):
                     self.connections.remove(self)
                     break
                 self.crossing_action = False
-                frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
-                colored_frame2 = simplest_cb2(frame, 1)
-                frame2 = VideoDetector(colored_frame2).getFrame()
-                w, h = 240 + 500, 320 + 400
-                x, y = 10, 0
-                crop_img = frame2[y:y + h, x:x + w]
-                resized_frame = cv2.resize(crop_img, (240 + 550, 320 + 450), interpolation=cv2.INTER_AREA)
-                try:
-                    camerasLiveImages.pop(self.uuid)
-                    camerasLiveImages[self.uuid] = resized_frame
-                except KeyError:
-                    camerasLiveImages[self.uuid] = resized_frame
-                cv2.imshow(str(self.address), resized_frame)
-                cv2.waitKey(1)
+
+                if self.img_frame_counter % 5 == 0:
+                    frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
+                    colored_frame2 = simplest_cb2(frame, 1)
+                    frame2 = VideoDetector(colored_frame2).getFrame()
+                    w, h = 240 + 500, 320 + 400
+                    x, y = 10, 0
+                    crop_img = frame2[y:y + h, x:x + w]
+                    resized_frame = cv2.resize(crop_img, (240 + 550, 320 + 450), interpolation=cv2.INTER_AREA)
+                    try:
+                        camerasLiveImages.pop(self.uuid)
+                        camerasLiveImages[self.uuid] = resized_frame
+                    except KeyError:
+                        camerasLiveImages[self.uuid] = resized_frame
+                    cv2.imshow(str(self.address), resized_frame)
+                    cv2.waitKey(1)
+
             except socket.error:
                 self.disconnect()
                 self.connections.remove(self)
