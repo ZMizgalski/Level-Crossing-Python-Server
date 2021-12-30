@@ -73,7 +73,7 @@ class ConnectedClient(threading.Thread):
         self.address = address
         self.connection_established = connection_established
         self.data_received = False
-        self.client_address = ""
+        self.camera_name = ""
         self.crossing_action = False
         self.img_array = []
         self.root_dir = os.path.dirname(os.path.abspath('logs')) + '\\logs\\'
@@ -84,7 +84,7 @@ class ConnectedClient(threading.Thread):
         self.data_received = False
         if str(self.address) is not None:
             cv2.destroyWindow(str(self.address))
-        camerasAddressees.pop(self.client_address)
+        camerasAddressees.pop(self.camera_name)
         self.connection_established = False
         self.socket.close()
         print(camerasAddressees)
@@ -112,7 +112,7 @@ class ConnectedClient(threading.Thread):
     def run(self):
         while self.connection_established:
             # reducing fps but increasing performance
-            sleep(0.02)
+            # sleep(0.02)
             try:
                 try:
                     if not self.crossing_action:
@@ -124,8 +124,9 @@ class ConnectedClient(threading.Thread):
 
                 if not self.data_received:
                     data = self.socket.recv(4096)
-                    self.client_address = str(data).replace("b", "").replace("'", "")
-                    camerasAddressees[self.client_address] = self.uuid
+                    camera_name = str(data).replace("b", "").replace("'", "")
+                    self.camera_name = camera_name.lstrip().replace(" ", "-")
+                    camerasAddressees[self.camera_name] = self.uuid
                     print(camerasAddressees)
                     self.data_received = True
                 while len(self.data) < self.payload_size:
@@ -173,7 +174,7 @@ class ConnectedClient(threading.Thread):
                     camerasLiveImages[self.uuid] = resized_frame
                 except KeyError:
                     camerasLiveImages[self.uuid] = resized_frame
-                self.createVideo(resized_frame)
+                threading.Thread(target=self.createVideo, args=[resized_frame, self.camera_name]).start()
                 cv2.imshow(str(self.address), resized_frame)
                 cv2.waitKey(1)
 
@@ -182,15 +183,16 @@ class ConnectedClient(threading.Thread):
                 self.connections.remove(self)
                 break
 
-    def createVideo(self, frame):
+    def createVideo(self, frame, camera_name):
         self.img_array.append(frame)
         self.img_frame_counter += 1
-        if self.img_frame_counter % 4000 == 0:
+        if self.img_frame_counter % 600 == 0:
             now = datetime.now()
+            valid_camera_name = camera_name.lstrip().replace(" ", "-")
             date_dir = now.strftime("%Y\\%m\\%d")
-            filename = now.strftime("%H_%M_%S")
-            file = self.root_dir + date_dir + "\\" + filename + ".avi"
-            path = self.root_dir + date_dir
+            filename = now.strftime("%H-%M-%S")
+            file = self.root_dir + date_dir + "\\" + valid_camera_name + "\\" + filename + ".avi"
+            path = self.root_dir + date_dir + "\\" + valid_camera_name
             pathlib.Path(path).mkdir(parents=True, exist_ok=True)
             height, width, layers = frame.shape
             out = cv2.VideoWriter(file, cv2.VideoWriter_fourcc(*'DIVX'), 15, (width, height))
