@@ -226,7 +226,6 @@ class ConnectedClient(threading.Thread):
         while counter <= 500:
             time.sleep(0.05)
             counter += 1
-            print(counter)
         self.socket.send('close'.encode("UTF-8"))
 
     def createVideo(self, frame, camera_name):
