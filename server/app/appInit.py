@@ -19,7 +19,78 @@ CORS(app)
 @app.route('/updateArea', methods=["PUT"])
 @cross_origin()
 def update_area():
-    return Response("ass", status=200)
+    content_type = request.headers.get('Content-Type')
+    if content_type == 'application/json':
+        json = request.json
+        try:
+            id = json["id"]
+            try:
+                valid_uuid = UUID(id)
+            except ValueError:
+                return Response("Not valid uuid", status=400)
+
+            oldAreaName = json["oldAreaName"]
+            new_area = json["area"]
+            new_area_name = new_area["areaName"]
+            pointsList = new_area["pointsList"]
+
+            camera_name = ""
+            for name, stored_uuid in camerasAddressees.items():
+                if stored_uuid == id:
+                    camera_name = name
+            if camera_name == "":
+                return Response("uuid not exists", status=400)
+
+            if len(pointsList) == 0:
+                return Response("Points list can't be empty", status=400)
+
+            if len(selectedAreas) == 0:
+                return Response("Areas not exists", status=400)
+
+            test_area_exists = False
+            for old_area in selectedAreas.values():
+                if old_area["areaName"] == oldAreaName:
+                    test_area_exists = True
+
+                if old_area["pointsList"] == pointsList:
+                    return Response("Points list can't be the same", status=400)
+
+            if not test_area_exists:
+                return Response("Area not exists", status=400)
+
+            for point in pointsList:
+                x = point["x"]
+                y = point["y"]
+                try:
+                    checksum = x + y
+                except TypeError:
+                    return Response("Values are not numbers", status=400)
+
+            test_selected_area = selectedAreas.getall(camera_name)
+
+            if len(test_selected_area) == 0:
+                return Response("Areas not exists", status=400)
+
+            temp_areas = []
+            for area in selectedAreas.values():
+                if area["areaName"] != oldAreaName:
+                    temp_areas.append(area)
+            selectedAreas.popall(camera_name)
+
+            area = {"areaName": new_area_name, "pointsList": pointsList}
+            selectedAreas.add(camera_name, area)
+
+            if len(temp_areas) == 0:
+                return Response("Successfully111 deleted area!", status=200)
+
+            for updated_area in temp_areas:
+                selectedAreas.add(camera_name, updated_area)
+
+            return Response("Area created successfully", status=200, mimetype="application/json")
+        except KeyError:
+            return Response("Content-Type not supported!", status=400)
+    else:
+        return Response("Content-Type not supported!", status=400)
 
 
 @app.route('/deleteArea', methods=["DELETE"])
