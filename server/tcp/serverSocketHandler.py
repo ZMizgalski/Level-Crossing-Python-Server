@@ -85,8 +85,8 @@ class ConnectedClient(threading.Thread):
     def disconnect(self):
         print("Client with address: " + str(self.address) + " has disconnected")
         self.data_received = False
-        if str(self.address) is not None:
-            cv2.destroyWindow(str(self.address))
+        # if str(self.address) is not None:
+        #     cv2.destroyWindow(str(self.address))
         camerasAddressees.pop(self.camera_name)
         self.connection_established = False
         self.socket.close()
@@ -213,8 +213,8 @@ class ConnectedClient(threading.Thread):
 
                     cv2.addWeighted(overlay, 0.7, resized_frame, 1 - 0.7, 0, resized_frame)
 
-                cv2.imshow(str(self.address), resized_frame)
-                cv2.waitKey(1)
+                # cv2.imshow(str(self.address), resized_frame)
+                # cv2.waitKey(1)
 
             except socket.error:
                 self.disconnect()
