@@ -12,6 +12,7 @@ import numpy as np
 import os
 from datetime import datetime
 import pathlib
+from PIL import Image, ImageTk
 
 
 def initApp(HOST, APP_PORT):
@@ -163,17 +164,41 @@ class ConnectedClient(threading.Thread):
                 self.crossing_action = False
                 frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
                 colored_frame2 = simplest_cb2(frame, 1)
-                frame2 = VideoDetector(colored_frame2).getFrame()
+                detector = VideoDetector(colored_frame2)
+                frame2 = detector.getFrame()
                 w, h = 240 + 500, 320 + 400
                 x, y = 10, 0
                 crop_img = frame2[y:y + h, x:x + w]
                 resized_frame = cv2.resize(crop_img, (240 + 550, 320 + 450), interpolation=cv2.INTER_AREA)
+
                 try:
                     camerasLiveImages.pop(self.uuid)
                     camerasLiveImages[self.uuid] = resized_frame
                 except KeyError:
                     camerasLiveImages[self.uuid] = resized_frame
+
                 threading.Thread(target=self.createVideo, args=[resized_frame, self.camera_name]).start()
+                overlay = resized_frame.copy()
+                if len(selectedAreas) != 0:
+                    for area in selectedAreas.getall(self.camera_name):
+                        points = area["pointsList"]
+                        point_list = []
+                        for point in points:
+                            x = point["x"]
+                            y = point["y"]
+                            point_list.append([int(x), int(y)])
+                        numpy_point_list = np.array(point_list)
+                        cv2.fillPoly(resized_frame, np.int32([numpy_point_list]), [255, 0, 0])
+
+                        x, y, width, height = cv2.boundingRect(numpy_point_list)
+                        drew_figure = x + width, y + height, width, height
+                        if detector.puzzle_rect is not None:
+                            print(detector.is_zone_overlap(drew_figure, detector.puzzle_rect))
+                            if detector.is_zone_overlap(drew_figure, detector.puzzle_rect):
+                                print("Rect: " + detector.puzzle_rect_name + " is colliding")
+
+                    cv2.addWeighted(overlay, 0.7, resized_frame, 1 - 0.7, 0, resized_frame)
+
                 cv2.imshow(str(self.address), resized_frame)
                 cv2.waitKey(1)
 

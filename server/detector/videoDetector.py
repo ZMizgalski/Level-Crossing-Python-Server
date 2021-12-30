@@ -47,6 +47,30 @@ class VideoDetector:
 
     # Sprawdza czy macierze (Numpy array) sie pokrywają NIE UŻYWANE!!
     @staticmethod
+    def intersection(rectA, rectB):  # check if rect A & B intersect
+        a, b = rectA, rectB
+        startX = max(min(a[0], a[2]), min(b[0], b[2]))
+        startY = max(min(a[1], a[3]), min(b[1], b[3]))
+        endX = min(max(a[0], a[2]), max(b[0], b[2]))
+        endY = min(max(a[1], a[3]), max(b[1], b[3]))
+        if startX < endX and startY < endY:
+            return True
+        else:
+            return False
+
+    @staticmethod
+    def is_zone_overlap(z1, z2):
+        x1, y1, w1, h1 = z1
+        x2, y2, w2, h2 = z2
+        # If one rectangle is on left side of other
+        if x1 > x2 + w2 or x1 + w1 < x2:
+            return False
+        # If one rectangle is above other
+        if y1 > y2 + h2 or y1 + h1 < y2:
+            return False
+        return True
+
+    @staticmethod
     def rectContains(rect1, rect2):
         x1, y1, w1, h1 = rect1
         x2, y2, w2, h2 = rect2
