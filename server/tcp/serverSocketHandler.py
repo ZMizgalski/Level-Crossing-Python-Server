@@ -12,7 +12,7 @@ import numpy as np
 import os
 from datetime import datetime
 import pathlib
-from PIL import Image, ImageTk
+import time
 
 
 def initApp(HOST, APP_PORT):
@@ -78,6 +78,9 @@ class ConnectedClient(threading.Thread):
         self.img_array = []
         self.root_dir = os.path.dirname(os.path.abspath('logs')) + '\\logs\\'
         self.img_frame_counter = 0
+        self.detection_counter = 0
+        self.start_detection_time_in_milliseconds = 0
+        self.detection_started = False
 
     def disconnect(self):
         print("Client with address: " + str(self.address) + " has disconnected")
@@ -109,10 +112,12 @@ class ConnectedClient(threading.Thread):
             except KeyError:
                 pass
 
+    @staticmethod
+    def current_milli_time():
+        return round(time.time() * 1000)
+
     def run(self):
         while self.connection_established:
-            # reducing fps but increasing performance
-            # sleep(0.02)
             try:
                 try:
                     if not self.crossing_action:
@@ -187,15 +192,24 @@ class ConnectedClient(threading.Thread):
                             x = point["x"]
                             y = point["y"]
                             point_list.append([int(x), int(y)])
+
                         numpy_point_list = np.array(point_list)
                         cv2.fillPoly(resized_frame, np.int32([numpy_point_list]), [255, 0, 0])
-
-                        x, y, width, height = cv2.boundingRect(numpy_point_list)
-                        drew_figure = x + width, y + height, width, height
+                        contour = numpy_point_list.reshape((-1, 1, 2)).astype(np.int32)
                         if detector.puzzle_rect is not None:
-                            print(detector.is_zone_overlap(drew_figure, detector.puzzle_rect))
-                            if detector.is_zone_overlap(drew_figure, detector.puzzle_rect):
-                                print("Rect: " + detector.puzzle_rect_name + " is colliding")
+                            if detector.intersects(contour, detector.puzzle_rect):
+                                self.detection_counter += 1
+                                if not self.detection_started:
+                                    self.start_detection_time_in_milliseconds = self.current_milli_time()
+                                    self.detection_started = True
+
+                                if self.detection_counter % 40 == 0:
+                                    if self.current_milli_time() - self.start_detection_time_in_milliseconds <= 40 * 1000:
+                                        print("Rect: " + detector.puzzle_rect_name + " is colliding")
+                                        self.socket.send('open'.encode("UTF-8"))
+                                        threading.Thread(target=self.startClosing).start()
+                                        self.start_detection_time_in_milliseconds = 0
+                                        self.detection_started = False
 
                     cv2.addWeighted(overlay, 0.7, resized_frame, 1 - 0.7, 0, resized_frame)
 
@@ -206,6 +220,14 @@ class ConnectedClient(threading.Thread):
                 self.disconnect()
                 self.connections.remove(self)
                 break
+
+    def startClosing(self):
+        counter = 0
+        while counter <= 500:
+            time.sleep(0.05)
+            counter += 1
+            print(counter)
+        self.socket.send('close'.encode("UTF-8"))
 
     def createVideo(self, frame, camera_name):
         self.img_array.append(frame)
