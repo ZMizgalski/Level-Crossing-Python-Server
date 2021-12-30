@@ -4,7 +4,6 @@ import cv2
 import pickle
 import struct
 import threading
-from time import sleep
 from server.tcp.serverDataService import *
 from server.app.appInit import appInit
 from server.detector.videoDetector import VideoDetector

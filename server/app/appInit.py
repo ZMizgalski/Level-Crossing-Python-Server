@@ -1,25 +1,19 @@
 import json
 
 from server.tcp.serverDataService import *
-from flask import Flask, render_template, Response, request, send_file, jsonify
+from flask import Flask, Response, request, send_file, jsonify
 from flask_cors import CORS, cross_origin
 import cv2
 from uuid import UUID
 import io
-from datetime import datetime, date
-import defaultdict
+from datetime import datetime
 from os.path import exists
 import os
 
-app = Flask(__name__)
-CORS(app)
 root_dir = os.path.dirname(os.path.abspath('logs')) + "\\logs"
-
-
-@app.route('/')
-@cross_origin()
-def index():
-    return render_template('index.html')
+app = Flask(__name__)
+app.config['LOGS'] = root_dir
+CORS(app)
 
 
 @app.route('/updateArea', methods=["PUT"])
@@ -31,13 +25,94 @@ def update_area():
 @app.route('/deleteArea', methods=["DELETE"])
 @cross_origin()
 def delete_area():
-    return Response("ass", status=200)
+    content_type = request.headers.get('Content-Type')
+    if content_type == 'application/json':
+        json = request.json
+        try:
+            id = json["id"]
+            try:
+                valid_uuid = UUID(id)
+            except ValueError:
+                return Response("Not valid uuid", status=400)
+            camera_name = ""
+            for name, stored_uuid in camerasAddressees.items():
+                if stored_uuid == id:
+                    camera_name = name
+            if camera_name == "":
+                return Response("uuid not exists", status=400)
+            area_name = json["areaName"]
+            if len(selectedAreas) == 0:
+                return Response("Areas not exists", status=400)
+            test_selected_area = selectedAreas.getall(camera_name)
+            if len(test_selected_area) == 0:
+                return Response("Areas not exists", status=400)
+            test_area_exists = False
+            for test_area in test_selected_area:
+                if test_area["areaName"] == area_name:
+                    test_area_exists = True
+            if not test_area_exists:
+                return Response("Areas not exists", status=400)
+            temp_areas = []
+            for area in selectedAreas.values():
+                if area["areaName"] != area_name:
+                    temp_areas.append(area)
+            selectedAreas.popall(camera_name)
+            if len(temp_areas) == 0:
+                return Response("Successfully111 deleted area!", status=200)
+            for updated_area in temp_areas:
+                selectedAreas.add(camera_name, updated_area)
+            return Response("Successfully deleted area!", status=200)
+        except KeyError:
+            return Response("Content-Type not supported!", status=400)
+    else:
+        return Response("Content-Type not supported!", status=400)
 
 
 @app.route('/setArea', methods=["POST"])
 @cross_origin()
 def set_area():
-    return Response("ass", status=200)
+    content_type = request.headers.get('Content-Type')
+    if content_type == 'application/json':
+        json = request.json
+        try:
+            id = json["id"]
+            try:
+                valid_uuid = UUID(id)
+            except ValueError:
+                return Response("Not valid uuid", status=400)
+            camera_name = ""
+            for name, stored_uuid in camerasAddressees.items():
+                if stored_uuid == id:
+                    camera_name = name
+            if camera_name == "":
+                return Response("uuid not exists", status=400)
+            area = json["area"]
+            areaName = area["areaName"]
+            pointsList = area["pointsList"]
+            if len(pointsList) == 0:
+                return Response("Points list can't be empty", status=400)
+
+            for old_area in selectedAreas.values():
+                if old_area["areaName"] == areaName:
+                    return Response("Name already exists", status=400)
+
+                if old_area["pointsList"] == pointsList:
+                    return Response("Points list can't be the same", status=400)
+
+            for point in pointsList:
+                x = point["x"]
+                y = point["y"]
+                try:
+                    checksum = x + y
+                except TypeError:
+                    return Response("Values are not numbers", status=400)
+            area = {"areaName": areaName, "pointsList": pointsList}
+            selectedAreas.add(camera_name, area)
+            return Response("Area created successfully", status=200, mimetype="application/json")
+        except KeyError:
+            return Response("Not valid request!", status=400)
+    else:
+        return Response("Content-Type not supported!", status=400)
 
 
 @app.route('/getAllAreasById/<id>', methods=["GET"])
@@ -48,35 +123,64 @@ def get_all_areas_by_id(id):
     except ValueError:
         return Response("Not valid uuid", status=400)
     uuid = request.view_args['id']
-
-    return Response(uuid, status=200)
-
-
-@app.route('/downloadFileByDate/<id>/<input_date>', methods=["GET"])
-@cross_origin()
-def download_file_by_date(id, input_date):
+    camera_name = ""
+    for name, stored_uuid in camerasAddressees.items():
+        if stored_uuid == uuid:
+            camera_name = name
+    if camera_name == "":
+        return Response("uuid not exists", status=400)
     try:
-        valid_uuid = UUID(id)
-    except ValueError:
-        return Response("Not valid uuid", status=400)
-    uuid = request.view_args['id']
-    input_date = request.view_args['input_date']
+        areas_array = selectedAreas.getall(camera_name)
+    except KeyError:
+        return Response(json.dumps([]), status=200, mimetype="application/json")
+    return Response(json.dumps(areas_array), status=200, mimetype="application/json")
 
-    try:
-        year, month, day_with_hours, minutes, seconds = input_date.split('-')
-        day, hours = day_with_hours.split('_')
-    except ValueError:
-        return Response("Invali Date yyyy-MM-dd_HH-mm-ss", status=400)
-    try:
-        formatted_date = datetime(int(year), int(month), int(day), int(hours), int(minutes), int(seconds))
-    except ValueError:
-        return Response("Invali Date yyyy-MM-dd_HH-mm-ss", status=400)
-    try:
-        date_time = datetime.strftime(formatted_date, "%Y-%m-%d_%H-%M-%S")
-    except ValueError:
-        return Response("Invali Date yyyy-MM-dd_HH-mm-ss", status=400)
 
-    return Response(uuid + "  " + date_time, status=200)
+# TODO framework cant put video in request ??
+# @app.route('/getFileByDate/<id>/<input_date>', methods=["GET"])
+# @cross_origin()
+# def download_file_by_date(id, input_date):
+#     try:
+#         valid_uuid = UUID(id)
+#     except ValueError:
+#         return Response("Not valid uuid", status=400)
+#     uuid = request.view_args['id']
+#     input_date = request.view_args['input_date']
+#     camera_name = ""
+#     for name, stored_uuid in camerasAddressees.items():
+#         if stored_uuid == uuid:
+#             camera_name = name
+#
+#     if camera_name == "":
+#         return Response("uuid not exists", status=400)
+#
+#     try:
+#         year, month, day_with_hours, minutes, seconds = input_date.split('-')
+#         day, hours = day_with_hours.split('_')
+#     except ValueError:
+#         return Response("Invali Date yyyy-MM-dd_HH-mm-ss", status=400)
+#     try:
+#         formatted_date = datetime(int(year), int(month), int(day), int(hours), int(minutes), int(seconds))
+#     except ValueError:
+#         return Response("Invali Date yyyy-MM-dd_HH-mm-ss", status=400)
+#     try:
+#         date_time = datetime.strftime(formatted_date, "%Y-%m-%d_%H-%M-%S")
+#     except ValueError:
+#         return Response("Invali Date yyyy-MM-dd_HH-mm-ss", status=400)
+#
+#     path = root_dir + "\\" + year + "\\" + month + "\\" + day + "\\" + camera_name + "\\" + hours + "-" + minutes + "-" + seconds + ".avi"
+#     file_exists = exists(path)
+#     if not file_exists:
+#         return Response("File not exists", status=400)
+#     file_size = os.path.getsize(path)
+#     fh = open(path, 'rb')
+#     return Response(fh,
+#                     mimetype='video/mp4',
+#                     headers=[
+#                         ('Content-Length', str(file_size)),
+#                         ('Content-Disposition', "filename=\"%s\"" % str(date_time) + ".avi"),
+#                     ],
+#                     direct_passthrough=True)
 
 
 @app.route('/getFilesByDay/<id>/<day>', methods=["GET"])
@@ -122,7 +226,7 @@ def get_files_by_day(id, day):
     return Response(json.dumps(date_array), status=200, mimetype="application/json")
 
 
-@app.route('/getFileByDate/<id>/<input_date>', methods=["GET"])
+@app.route('/downloadFileByDate/<id>/<input_date>', methods=["GET"])
 @cross_origin()
 def get_file_by_date(id, input_date):
     try:
@@ -158,7 +262,8 @@ def get_file_by_date(id, input_date):
     file_exists = exists(path)
     if not file_exists:
         return Response("File not exists", status=400)
-    return send_file(attachment_filename=str(date_time) + ".avi", path_or_file=path, as_attachment=True, mimetype="video/mp4")
+    return send_file(attachment_filename=str(date_time) + ".avi", path_or_file=path, as_attachment=True,
+                     mimetype="video/mp4")
 
 
 @app.route('/stream-cover/<id>')
