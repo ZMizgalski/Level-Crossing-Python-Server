@@ -1,7 +1,7 @@
 import json
 
 from server.tcp.serverDataService import *
-from flask import Flask, Response, request, send_file, jsonify
+from flask import Flask, Response, request, send_file, jsonify, make_response, render_template, redirect
 from flask_cors import CORS, cross_origin
 import cv2
 from uuid import UUID
@@ -11,12 +11,22 @@ from os.path import exists
 import os
 
 root_dir = os.path.dirname(os.path.abspath('logs')) + "\\logs"
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='', static_folder='static', template_folder='templates')
 app.config['LOGS'] = root_dir
 CORS(app)
 
 
-@app.route('/updateArea', methods=["PUT"])
+@app.route('/')
+def basic_pages(**kwargs):
+    return render_template("index.html")
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return redirect("/")
+
+
+@app.route('/camera-preview/updateArea', methods=["PUT"])
 @cross_origin()
 def update_area():
     content_type = request.headers.get('Content-Type')
@@ -93,7 +103,7 @@ def update_area():
         return Response("Content-Type not supported!", status=400)
 
 
-@app.route('/deleteArea', methods=["DELETE"])
+@app.route('/camera-preview/deleteArea', methods=["DELETE"])
 @cross_origin()
 def delete_area():
     content_type = request.headers.get('Content-Type')
@@ -139,7 +149,7 @@ def delete_area():
         return Response("Content-Type not supported!", status=400)
 
 
-@app.route('/setArea', methods=["POST"])
+@app.route('/camera-preview/setArea', methods=["POST"])
 @cross_origin()
 def set_area():
     content_type = request.headers.get('Content-Type')
@@ -186,7 +196,7 @@ def set_area():
         return Response("Content-Type not supported!", status=400)
 
 
-@app.route('/getAllAreasById/<id>', methods=["GET"])
+@app.route('/camera-preview/getAllAreasById/<id>', methods=["GET"])
 @cross_origin()
 def get_all_areas_by_id(id):
     try:
@@ -254,7 +264,7 @@ def get_all_areas_by_id(id):
 #                     direct_passthrough=True)
 
 
-@app.route('/getFilesByDay/<id>/<day>', methods=["GET"])
+@app.route('/camera-preview/getFilesByDay/<id>/<day>', methods=["GET"])
 @cross_origin()
 def get_files_by_day(id, day):
     try:
@@ -297,7 +307,7 @@ def get_files_by_day(id, day):
     return Response(json.dumps(date_array), status=200, mimetype="application/json")
 
 
-@app.route('/downloadFileByDate/<id>/<input_date>', methods=["GET"])
+@app.route('/camera-preview/downloadFileByDate/<id>/<input_date>', methods=["GET"])
 @cross_origin()
 def get_file_by_date(id, input_date):
     try:
@@ -354,7 +364,7 @@ def get_Camera_Cover(id):
         mimetype='image/jpeg')
 
 
-@app.route('/checkIfCameraIsOnline/<id>', methods=["GET"])
+@app.route('/camera-preview/checkIfCameraIsOnline/<id>', methods=["GET"])
 @cross_origin()
 def check_if_cameras_is_online(id):
     uuid = request.view_args['id']
@@ -380,7 +390,7 @@ def get_all_cameras():
     return Response(json.dumps(cameras), status=200, mimetype="application/json")
 
 
-@app.route('/server-stream/<id>', methods=['GET'])
+@app.route('/camera-preview/server-stream/<id>', methods=['GET'])
 @cross_origin()
 def video_feed(id):
     uuid = request.view_args['id']
