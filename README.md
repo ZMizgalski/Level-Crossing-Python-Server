@@ -5,7 +5,6 @@
 * [General Info](#general-information)
 * [Technologies Used](#technologies-used)
 * [Features](#features)
-* [Screenshots](#screenshots)
 * [Setup](#setup)
 * [Usage](#usage)
 * [Project Status](#project-status)
@@ -30,19 +29,6 @@ List the ready features here:
 - Secured connection
 - Socket connection
 - Multidict for cameras data service
-
-## Screenshots
-![img](https://github.com/ZMizgalski/Level-Crossing-Python-Server/blob/master/imgs/logo.png)
-![img](https://github.com/ZMizgalski/Level-Crossing-Python-Server/blob/master/imgs/1.png)
-![img](https://github.com/ZMizgalski/Level-Crossing-Python-Server/blob/master/imgs/2.png)
-![img](https://github.com/ZMizgalski/Level-Crossing-Python-Server/blob/master/imgs/3.png)
-![img](https://github.com/ZMizgalski/Level-Crossing-Python-Server/blob/master/imgs/4.png)
-![img](https://github.com/ZMizgalski/Level-Crossing-Python-Server/blob/master/imgs/5.png)
-![img](https://github.com/ZMizgalski/Level-Crossing-Python-Server/blob/master/imgs/6.png)
-![img](https://github.com/ZMizgalski/Level-Crossing-Python-Server/blob/master/imgs/7.png)
-![img](https://github.com/ZMizgalski/Level-Crossing-Python-Server/blob/master/imgs/8.png)
-![img](https://github.com/ZMizgalski/Level-Crossing-Python-Server/blob/master/imgs/9.png)
-![img](https://github.com/ZMizgalski/Level-Crossing-Python-Server/blob/master/imgs/10.png)
 
 ## Setup
 - Python 3.6+
