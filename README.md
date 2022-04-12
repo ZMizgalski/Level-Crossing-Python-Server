@@ -43,7 +43,7 @@ List the ready features here:
 1. Create a folder named you like.
 2. Inside your folder, open console and paste: `git clone https://github.com/ZMizgalski/Level-Crossing-Python-Server.git`
 3. Install python from the official website. [Download here](https://www.python.org/downloads/)
-4. Install pip then install all requirements from requirements.txt
+4. Install pip then install all requirements from [requirements.txt](https://github.com/ZMizgalski/Level-Crossing-Python-Client/blob/master/requirements.txt)
 5. Then you are ready to go just open it in any Editor. (I prefer PyCharm Community) [Download here](https://www.jetbrains.com/pycharm/)
 
 ## Project Status
