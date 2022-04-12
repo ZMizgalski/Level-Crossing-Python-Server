@@ -33,17 +33,13 @@ List the ready features here:
 ## Setup
 - Python 3.6+
 - configured pip
-- Flask==2.0.2
-- Flask_Cors==3.0.10
-- multidict==5.2.0
-- numpy==1.20.2
-- opencv_python==4.5.1.48
+- More requirements found in [requirements.txt](https://github.com/ZMizgalski/Level-Crossing-Python-Server/blob/master/requirements.txt)
 
 ## Usage
 1. Create a folder named you like.
 2. Inside your folder, open console and paste: `git clone https://github.com/ZMizgalski/Level-Crossing-Python-Server.git`
 3. Install python from the official website. [Download here](https://www.python.org/downloads/)
-4. Install pip then install all requirements from [requirements.txt](https://github.com/ZMizgalski/Level-Crossing-Python-Client/blob/master/requirements.txt)
+4. Install pip then install all requirements from [requirements.txt](https://github.com/ZMizgalski/Level-Crossing-Python-Server/blob/master/requirements.txt)
 5. Then you are ready to go just open it in any Editor. (I prefer PyCharm Community) [Download here](https://www.jetbrains.com/pycharm/)
 
 ## Project Status
