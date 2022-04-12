@@ -1,5 +1,5 @@
 # Level-Crossing-Python-Server
-> Level crossing server made with Angular and Flask for competition: "OLIMPIADA INNOWACJI TECHNICZNYCH I WYNALAZCZOŚCI" [Link](https://www.pzswir.pl/olimpiada)
+> The level crossing server made with Angular and Flask for competition: "OLIMPIADA INNOWACJI TECHNICZNYCH I WYNALAZCZOŚCI" [Link](https://www.pzswir.pl/olimpiada)
 
 ## Table of Contents
 * [General Info](#general-information)
@@ -13,7 +13,7 @@
 * [License](#license)
 
 ## General Information
-- This project was made for school competition and also to improve railroads in whole country. It uses AI to detect objects and decide to open crossing barriers when someone is blocked. To work properly it needs to be connected to network.
+- This project was made for school competition and also to improve railroads in whole country. It uses AI to detect objects and decide to open crossing barriers when someone is blocked. To work properly it needs to be connected to a network.
 
 ## Technologies Used
 - OpenCv
@@ -28,6 +28,7 @@ List the ready features here:
 - Automatic object detection
 - Secured connection
 - Socket connection
+- Multidict for cameras data service
 
 ## Setup
 - Python 3.6+
@@ -41,7 +42,7 @@ List the ready features here:
 ## Usage
 1. Create a folder named you like.
 2. Inside your folder, open console and paste: `git clone https://github.com/ZMizgalski/Level-Crossing-Python-Server.git`
-3. Install python from official website.
+3. Install python from the official website. [Download here](https://www.python.org/downloads/)
 4. Install pip then install all requirements from requirements.txt
 5. Then you are ready to go just open it in any Editor. (I prefer PyCharm Community) [Download here](https://www.jetbrains.com/pycharm/)
 
